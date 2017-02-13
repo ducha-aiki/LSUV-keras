@@ -2,6 +2,8 @@ from __future__ import print_function
 import numpy as np
 from keras.models import Model
 from keras import backend as K
+from keras.layers import Dense, Convolution2D
+
 # Orthonorm init code is taked from Lasagne
 # https://github.com/Lasagne/Lasagne/blob/master/lasagne/init.py
 def svd_orthonormal(shape):
@@ -19,14 +21,22 @@ def get_activations(model, layer, X_batch):
     return activations
 
 def LSUVinit(model,batch):
+    classes_to_consider = (Dense, Convolution2D)
     margin = 0.1
     max_iter = 10
     i=-1
+    layers_inintialized = 0
     for layer in model.layers:
         i+=1
         print(layer.get_config()['name'])
-        if (('convolution' not in layer.get_config()['name']) and 'clf' not in layer.get_config()['name'] and 'dense' not in layer.get_config()['name']):
+        if not any([type(layer) is class_name for class_name in classes_to_consider]):
             continue
+        # avoid small layers where activation variance close to zero, esp. for small batches
+        if np.prod(layer.get_output_shape_at(0)[1:]) < 32:
+            print(layer.name, 'too small')
+            continue
+        print('LSUV initializing', layer.name)
+        layers_inintialized += 1
         w_all=layer.get_weights();
         weights = np.array(w_all[0])
         weights = svd_orthonormal(weights.shape)
@@ -42,6 +52,7 @@ def LSUVinit(model,batch):
             w_all=layer.get_weights();
             weights = np.array(w_all[0])
             biases = np.array(w_all[1])
+            if np.abs(np.sqrt(var1)) < 1e-7: break      # avoid division to zero
             weights /= np.sqrt(var1)/np.sqrt(needed_variance)
             w_all_new = [weights,biases]
             layer.set_weights(w_all_new)
@@ -51,4 +62,5 @@ def LSUVinit(model,batch):
             print(var1)
             if iter1 > max_iter:
                 break
+    print('LSUV: total layers initialized', layers_inintialized)   
     return model
