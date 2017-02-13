@@ -21,14 +21,16 @@ def get_activations(model, layer, X_batch):
     return activations
 
 def LSUVinit(model,batch):
+    # only these layer classes considered for LSUV initialization; add more if needed
     classes_to_consider = (Dense, Convolution2D)
+    
     margin = 0.1
     max_iter = 10
     i=-1
     layers_inintialized = 0
     for layer in model.layers:
         i+=1
-        print(layer.get_config()['name'])
+        print(layer.name)
         if not any([type(layer) is class_name for class_name in classes_to_consider]):
             continue
         # avoid small layers where activation variance close to zero, esp. for small batches
@@ -52,7 +54,7 @@ def LSUVinit(model,batch):
             w_all=layer.get_weights();
             weights = np.array(w_all[0])
             biases = np.array(w_all[1])
-            if np.abs(np.sqrt(var1)) < 1e-7: break      # avoid division to zero
+            if np.abs(np.sqrt(var1)) < 1e-7: break      # avoid zero division
             weights /= np.sqrt(var1)/np.sqrt(needed_variance)
             w_all_new = [weights,biases]
             layer.set_weights(w_all_new)
