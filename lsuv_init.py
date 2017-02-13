@@ -16,8 +16,8 @@ def svd_orthonormal(shape):
     q = q.reshape(shape)
     return q
 def get_activations(model, layer, X_batch):
-    get_activations = K.function([model.layers[0].input, K.learning_phase()], [model.layers[layer].output,])
-    activations = get_activations([X_batch,0])
+    intermediate_layer_model = Model(input=model.get_input_at(0), output=layer.get_output_at(0))
+    activations = intermediate_layer_model.predict(X_batch)
     return activations
 
 def LSUVinit(model,batch):
@@ -26,10 +26,8 @@ def LSUVinit(model,batch):
     
     margin = 0.1
     max_iter = 10
-    i=-1
     layers_inintialized = 0
     for layer in model.layers:
-        i+=1
         print(layer.name)
         if not any([type(layer) is class_name for class_name in classes_to_consider]):
             continue
@@ -45,7 +43,7 @@ def LSUVinit(model,batch):
         biases = np.array(w_all[1])
         w_all_new = [weights,biases]
         layer.set_weights(w_all_new)
-        acts1=get_activations(model,i,batch)
+        acts1=get_activations(model, layer, batch)
         var1=np.var(acts1)
         iter1=0
         needed_variance = 1.0
@@ -58,7 +56,7 @@ def LSUVinit(model,batch):
             weights /= np.sqrt(var1)/np.sqrt(needed_variance)
             w_all_new = [weights,biases]
             layer.set_weights(w_all_new)
-            acts1=get_activations(model,i,batch)
+            acts1=get_activations(model, layer, batch)
             var1=np.var(acts1)
             iter1+=1
             print(var1)
