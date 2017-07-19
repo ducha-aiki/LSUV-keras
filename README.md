@@ -16,3 +16,5 @@ Mishkin, D. and Matas, J.,(2015). All you need is a good init. ICLR 2016 [arXiv:
 Original Caffe implementation  [https://github.com/ducha-aiki/LSUVinit](https://github.com/ducha-aiki/LSUVinit)
 
 Torch re-implementation [https://github.com/yobibyte/torch-lsuv](https://github.com/yobibyte/torch-lsuv)
+
+PyTorch implementation [https://github.com/ducha-aiki/LSUV-pytorch](https://github.com/ducha-aiki/LSUV-pytorch)
