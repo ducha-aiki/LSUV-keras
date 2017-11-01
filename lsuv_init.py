@@ -18,7 +18,10 @@ def svd_orthonormal(shape):
 
 
 def get_activations(model, layer, X_batch):
-    intermediate_layer_model = Model(input=model.get_input_at(0), output=layer.get_output_at(0))
+    intermediate_layer_model = Model(
+        inputs=model.get_input_at(0),
+        outputs=layer.get_output_at(0)
+    )
     activations = intermediate_layer_model.predict(X_batch)
     return activations
 
