@@ -1,13 +1,13 @@
 # Layer-sequential unit-variance (LSUV) initialization for Keras
 
-This is sample code for LSUV and initializations, implemented in python script within Keras framework. 
+This is sample code for LSUV and initializations, implemented in python script within Keras framework.
 
 Usage:
 
     from lsuv_init import LSUVinit
     ...
     batch_size = 32
-    model = LSUVinit(model,train_imgs[:batch_size,:,:,:]) 
+    model = LSUVinit(model, train_imgs[:batch_size,:,:,:])
 
 LSUV initialization is described in:
 
