@@ -23,7 +23,7 @@ def get_activations(model, layer, X_batch):
     return activations
 
 
-def LSUVinit(model, batch):
+def LSUVinit(model, batch, verbose=True):
     # only these layer classes considered for LSUV initialization; add more if needed
     classes_to_consider = (Dense, Convolution2D)
 
@@ -31,14 +31,18 @@ def LSUVinit(model, batch):
     max_iter = 10
     layers_inintialized = 0
     for layer in model.layers:
-        print(layer.name)
+        if verbose:
+            print(layer.name)
         if not any([type(layer) is class_name for class_name in classes_to_consider]):
             continue
         # avoid small layers where activation variance close to zero, esp. for small batches
         if np.prod(layer.get_output_shape_at(0)[1:]) < 32:
-            print(layer.name, 'too small')
+            if verbose:
+                print(layer.name, 'too small')
             continue
-        print('LSUV initializing', layer.name)
+        if verbose:
+            print('LSUV initializing', layer.name)
+
         layers_inintialized += 1
         w_all = layer.get_weights()
         weights = np.array(w_all[0])
@@ -50,7 +54,8 @@ def LSUVinit(model, batch):
         var1 = np.var(acts1)
         iter1 = 0
         needed_variance = 1.0
-        print(var1)
+        if verbose:
+            print(var1)
         while (abs(needed_variance - var1) > margin):
             w_all = layer.get_weights()
             weights = np.array(w_all[0])
@@ -61,12 +66,13 @@ def LSUVinit(model, batch):
             weights /= np.sqrt(var1)/np.sqrt(needed_variance)
             w_all_new = [weights, biases]
             layer.set_weights(w_all_new)
-            acts = get_activations(model, layer, batch)
+            acts1 = get_activations(model, layer, batch)
             var1 = np.var(acts1)
             iter1 += 1
-            print(var1)
+            if verbose:
+                print(var1)
             if iter1 > max_iter:
                 break
-
-    print('LSUV: total layers initialized', layers_inintialized)
+    if verbose:
+        print('LSUV: total layers initialized', layers_inintialized)
     return model
