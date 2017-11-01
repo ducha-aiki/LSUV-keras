@@ -26,17 +26,17 @@ def get_activations(model, layer, X_batch):
     return activations
 
 
-def LSUVinit(model, batch, verbose=True):
+def LSUVinit(model, batch, verbose=True, margin=0.1, max_iter=10):
     # only these layer classes considered for LSUV initialization; add more if needed
     classes_to_consider = (Dense, Convolution2D)
 
-    margin = 0.1
-    max_iter = 10
+    needed_variance = 1.0
+
     layers_inintialized = 0
     for layer in model.layers:
         if verbose:
             print(layer.name)
-        if not any([type(layer) is class_name for class_name in classes_to_consider]):
+        if not isinstance(layer, classes_to_consider):
             continue
         # avoid small layers where activation variance close to zero, esp. for small batches
         if np.prod(layer.get_output_shape_at(0)[1:]) < 32:
@@ -47,34 +47,29 @@ def LSUVinit(model, batch, verbose=True):
             print('LSUV initializing', layer.name)
 
         layers_inintialized += 1
-        w_all = layer.get_weights()
-        weights = np.array(w_all[0])
+        weights, biases = layer.get_weights()
         weights = svd_orthonormal(weights.shape)
-        biases = np.array(w_all[1])
-        w_all_new = [weights, biases]
-        layer.set_weights(w_all_new)
-        acts1 = get_activations(model, layer, batch)
-        var1 = np.var(acts1)
-        iter1 = 0
-        needed_variance = 1.0
+        layer.set_weights([weights, biases])
+        activations = get_activations(model, layer, batch)
+        variance = np.var(activations)
+        iteration = 0
         if verbose:
-            print(var1)
-        while (abs(needed_variance - var1) > margin):
-            w_all = layer.get_weights()
-            weights = np.array(w_all[0])
-            biases = np.array(w_all[1])
-            if np.abs(np.sqrt(var1)) < 1e-7:
+            print(variance)
+        while abs(needed_variance - variance) > margin:
+            if np.abs(np.sqrt(variance)) < 1e-7:
                 # avoid zero division
                 break
-            weights /= np.sqrt(var1)/np.sqrt(needed_variance)
-            w_all_new = [weights, biases]
-            layer.set_weights(w_all_new)
-            acts1 = get_activations(model, layer, batch)
-            var1 = np.var(acts1)
-            iter1 += 1
+
+            weights, biases = layer.get_weights()
+            weights /= np.sqrt(variance) / np.sqrt(needed_variance)
+            layer.set_weights([weights, biases])
+            activations = get_activations(model, layer, batch)
+            variance = np.var(activations)
+
+            iteration += 1
             if verbose:
-                print(var1)
-            if iter1 > max_iter:
+                print(variance)
+            if iteration >= max_iter:
                 break
     if verbose:
         print('LSUV: total layers initialized', layers_inintialized)
