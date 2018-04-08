@@ -47,9 +47,9 @@ def LSUVinit(model, batch, verbose=True, margin=0.1, max_iter=10):
             print('LSUV initializing', layer.name)
 
         layers_inintialized += 1
-        weights, biases = layer.get_weights()
-        weights = svd_orthonormal(weights.shape)
-        layer.set_weights([weights, biases])
+        weights_and_biases = layer.get_weights()
+        weights_and_biases[0] = svd_orthonormal(weights_and_biases[0].shape)
+        layer.set_weights(weights_and_biases)
         activations = get_activations(model, layer, batch)
         variance = np.var(activations)
         iteration = 0
@@ -60,7 +60,9 @@ def LSUVinit(model, batch, verbose=True, margin=0.1, max_iter=10):
                 # avoid zero division
                 break
 
-            weights, biases = layer.get_weights()
+            weights_and_biases = layer.get_weights()
+            weights_and_biases[0] /= np.sqrt(variance) / np.sqrt(needed_variance)
+            layer.set_weights(weights_and_biases)
             weights /= np.sqrt(variance) / np.sqrt(needed_variance)
             layer.set_weights([weights, biases])
             activations = get_activations(model, layer, batch)
