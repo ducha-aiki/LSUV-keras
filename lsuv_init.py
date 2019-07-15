@@ -63,8 +63,6 @@ def LSUVinit(model, batch, verbose=True, margin=0.1, max_iter=10):
             weights_and_biases = layer.get_weights()
             weights_and_biases[0] /= np.sqrt(variance) / np.sqrt(needed_variance)
             layer.set_weights(weights_and_biases)
-            weights /= np.sqrt(variance) / np.sqrt(needed_variance)
-            layer.set_weights([weights, biases])
             activations = get_activations(model, layer, batch)
             variance = np.var(activations)
 
